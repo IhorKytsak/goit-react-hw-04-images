@@ -10,96 +10,73 @@ import Modal from './Modal/Modal';
 const apiKey = '32099217-de7cf2504ca4eed95138fd014';
 
 const App = () => {
-  const initState = {
-    searchValue: '',
-    images: [],
-    modalImage: '',
-    showModal: false,
-    showLoader: false,
-    currentPage: 1,
-  };
-
-  const [state, setState] = useState(initState);
-
-  const { searchValue, currentPage } = state;
+  const [searchValue, setSearchValue] = useState('');
+  const [images, setImages] = useState([]);
+  const [modalImage, setModalImage] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [showLoader, setShowLoader] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    getImages(searchValue, currentPage);
+    const fetchImages = async () => {
+      try {
+        const request = await getImages(searchValue, currentPage);
+        setImages(prevArray => [...prevArray, ...request]);
+      } catch (error) {
+        alert(error.message);
+      } finally {
+        setShowLoader(false);
+      }
+    };
+
+    fetchImages();
   }, [searchValue, currentPage]);
 
-  const toggleModal = () => {
-    setState(prevState => ({ ...prevState, showModal: !prevState.showModal }));
+  const getImages = async (words, page) => {
+    const request = await axios.get(
+      `https://pixabay.com/api/?q=${words}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
+    );
+    return request.data.hits;
   };
 
-  const addNewImages = newImages => {
-    const newSearchArray = [...state.images, ...newImages];
-
-    setState(prevState => ({ ...prevState, images: newSearchArray }));
+  const toggleModal = () => {
+    setShowModal(prevState => !prevState);
   };
 
   const openLargeImage = linkImg => {
-    setState(prevState => ({ ...prevState, modalImage: linkImg }));
+    setModalImage(linkImg);
     toggleModal();
   };
 
-  const loaderToggle = boolean => {
-    setState(prevState => ({ ...prevState, showLoader: boolean }));
-  };
-
-  const getImages = (words, page) => {
-    loaderToggle(true);
-    axios
-      .get(
-        `https://pixabay.com/api/?q=${words}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
-      )
-      .then(response => {
-        const receivedImages = response.data.hits;
-        addNewImages(receivedImages);
-        loaderToggle(false);
-      })
-      .catch(error => {
-        loaderToggle(false);
-        alert(error.message);
-      });
-  };
-
-  const searchFormHandler = searchValue => {
-    if (searchValue.trim() === '' || searchValue === state.searchValue) {
+  const searchFormHandler = formValue => {
+    if (formValue.trim() === '' || formValue === searchValue) {
       return;
     }
-
-    setState(prevState => ({
-      ...prevState,
-      searchValue: searchValue,
-      images: [],
-      currentPage: 1,
-    }));
+    setShowLoader(true);
+    setSearchValue(formValue);
+    setImages([]);
+    setCurrentPage(1);
   };
 
   const loadMoreHandler = () => {
-    setState(prevState => ({
-      ...prevState,
-      currentPage: prevState.currentPage + 1,
-    }));
+    setShowLoader(true);
+    setCurrentPage(prevState => prevState + 1);
   };
 
   return (
     <div className="App">
-      {state.showModal && (
+      {showModal && (
         <Modal closeModal={toggleModal}>
-          <img src={state.modalImage} alt="modal" />
+          <img src={modalImage} alt="modal" />
         </Modal>
       )}
       <Searchbar onSubmit={searchFormHandler} />
 
-      {state.searchValue !== '' && (
-        <ImageGallery
-          imagesArray={state.images}
-          modalHandler={openLargeImage}
-        />
+      {searchValue !== '' && (
+        <ImageGallery imagesArray={images} modalHandler={openLargeImage} />
       )}
-      {state.showLoader && <Loader />}
-      {state.searchValue !== '' && state.images.length > 0 && (
+      {showLoader && <Loader />}
+      {searchValue !== '' && images.length > 0 && (
         <Button loadMore={loadMoreHandler} />
       )}
     </div>
