@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 import Loader from './Loader/Loader';
@@ -9,8 +9,8 @@ import Modal from './Modal/Modal';
 
 const apiKey = '32099217-de7cf2504ca4eed95138fd014';
 
-class App extends Component {
-  state = {
+const App = () => {
+  const initState = {
     searchValue: '',
     images: [],
     modalImage: '',
@@ -19,83 +19,91 @@ class App extends Component {
     currentPage: 1,
   };
 
-  toggleModal = () => {
-    this.setState(({ showModal }) => ({ showModal: !showModal }));
+  const [state, setState] = useState(initState);
+
+  const { searchValue, currentPage } = state;
+
+  useEffect(() => {
+    getImages(searchValue, currentPage);
+  }, [searchValue, currentPage]);
+
+  const toggleModal = () => {
+    setState(prevState => ({ ...prevState, showModal: !prevState.showModal }));
   };
 
-  addNewImages = newImages => {
-    const newSearchArray = [...this.state.images, ...newImages];
+  const addNewImages = newImages => {
+    const newSearchArray = [...state.images, ...newImages];
 
-    this.setState({ images: newSearchArray });
+    setState(prevState => ({ ...prevState, images: newSearchArray }));
   };
 
-  openLargeImage = linkImg => {
-    this.setState({ modalImage: linkImg });
-    this.toggleModal();
+  const openLargeImage = linkImg => {
+    setState(prevState => ({ ...prevState, modalImage: linkImg }));
+    toggleModal();
   };
 
-  loaderToggle = boolean => {
-    return this.setState({ showLoader: boolean });
+  const loaderToggle = boolean => {
+    setState(prevState => ({ ...prevState, showLoader: boolean }));
   };
 
-  getImages(words, page) {
-    this.loaderToggle(true);
+  const getImages = (words, page) => {
+    loaderToggle(true);
     axios
       .get(
         `https://pixabay.com/api/?q=${words}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
       )
       .then(response => {
         const receivedImages = response.data.hits;
-        this.addNewImages(receivedImages);
-        this.loaderToggle(false);
-        this.setState(prevState => ({
-          currentPage: prevState.currentPage + 1,
-        }));
+        addNewImages(receivedImages);
+        loaderToggle(false);
+      })
+      .catch(error => {
+        loaderToggle(false);
+        alert(error.message);
       });
-  }
+  };
 
-  searchFormHandler = searchValue => {
-    if (searchValue.trim() === '') {
+  const searchFormHandler = searchValue => {
+    if (searchValue.trim() === '' || searchValue === state.searchValue) {
       return;
     }
-    this.setState({
+
+    setState(prevState => ({
+      ...prevState,
       searchValue: searchValue,
       images: [],
       currentPage: 1,
-    });
-    const page = 1;
-
-    this.getImages(searchValue, page);
+    }));
   };
 
-  loadMoreHandler = () => {
-    this.loaderToggle(true);
-    this.getImages(this.state.searchValue, this.state.currentPage);
+  const loadMoreHandler = () => {
+    setState(prevState => ({
+      ...prevState,
+      currentPage: prevState.currentPage + 1,
+    }));
   };
 
-  render() {
-    return (
-      <div className="App">
-        {this.state.showModal && (
-          <Modal closeModal={this.toggleModal}>
-            <img src={this.state.modalImage} alt="modal" />
-          </Modal>
-        )}
-        <Searchbar onSubmit={this.searchFormHandler} />
+  return (
+    <div className="App">
+      {state.showModal && (
+        <Modal closeModal={toggleModal}>
+          <img src={state.modalImage} alt="modal" />
+        </Modal>
+      )}
+      <Searchbar onSubmit={searchFormHandler} />
 
-        {this.state.searchValue !== '' && (
-          <ImageGallery
-            imagesArray={this.state.images}
-            modalHandler={this.openLargeImage}
-          />
-        )}
-        {this.state.showLoader && <Loader />}
-        {this.state.searchValue !== '' && this.state.images.length > 0 && (
-          <Button loadMore={this.loadMoreHandler} />
-        )}
-      </div>
-    );
-  }
-}
+      {state.searchValue !== '' && (
+        <ImageGallery
+          imagesArray={state.images}
+          modalHandler={openLargeImage}
+        />
+      )}
+      {state.showLoader && <Loader />}
+      {state.searchValue !== '' && state.images.length > 0 && (
+        <Button loadMore={loadMoreHandler} />
+      )}
+    </div>
+  );
+};
 
 export default App;

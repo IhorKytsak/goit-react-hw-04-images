@@ -1,27 +1,24 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
 import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
 
-class ImageGallery extends Component {
-  render() {
-    return (
-      <ul className="ImageGallery">
-        {this.props.imagesArray.map(image => {
-          return (
-            <ImageGalleryItem
-              key={image.id}
-              imageLink={image.webformatURL}
-              imageAlt={image.tags}
-              largeImageURL={image.largeImageURL}
-              modalHandler={this.props.modalHandler}
-            />
-          );
-        })}
-      </ul>
-    );
-  }
-}
+const ImageGallery = ({ imagesArray, modalHandler }) => {
+  return (
+    <ul className="ImageGallery">
+      {imagesArray.map(image => {
+        return (
+          <ImageGalleryItem
+            key={image.id}
+            imageLink={image.webformatURL}
+            imageAlt={image.tags}
+            largeImageURL={image.largeImageURL}
+            modalHandler={modalHandler}
+          />
+        );
+      })}
+    </ul>
+  );
+};
 
 ImageGallery.propTypes = {
   imagesArray: PropTypes.array.isRequired,

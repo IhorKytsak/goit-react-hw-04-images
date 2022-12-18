@@ -1,23 +1,25 @@
-import React, { Component } from 'react';
 import PropTypes from 'prop-types';
 
-class ImageGalleryItem extends Component {
-  render() {
-    return (
-      <li className="ImageGalleryItem">
-        <img
-          onClick={e => {
-            this.props.modalHandler(e.target.currentSrc);
-          }}
-          src={this.props.imageLink}
-          alt={this.props.imageAlt}
-          data-large={this.props.largeImageURL}
-          className="ImageGalleryItem-image"
-        />
-      </li>
-    );
-  }
-}
+const ImageGalleryItem = ({
+  imageLink,
+  imageAlt,
+  largeImageURL,
+  modalHandler,
+}) => {
+  return (
+    <li className="ImageGalleryItem">
+      <img
+        onClick={e => {
+          modalHandler(e.target.currentSrc);
+        }}
+        src={imageLink}
+        alt={imageAlt}
+        data-large={largeImageURL}
+        className="ImageGalleryItem-image"
+      />
+    </li>
+  );
+};
 
 ImageGalleryItem.propTypes = {
   imageLink: PropTypes.string.isRequired,
