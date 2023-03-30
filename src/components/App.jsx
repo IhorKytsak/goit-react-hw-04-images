@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useEffect, useState, useRef } from 'react';
 
 import Loader from './Loader/Loader';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
 import Button from './Button/Button';
 import Modal from './Modal/Modal';
-
-const apiKey = '32099217-de7cf2504ca4eed95138fd014';
+import { fetchImages } from '../api/pixabayAPI';
 
 const App = () => {
   const [searchValue, setSearchValue] = useState('');
@@ -15,13 +13,21 @@ const App = () => {
   const [modalImage, setModalImage] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showLoader, setShowLoader] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(0);
+  const totalImages = useRef(0);
 
   useEffect(() => {
-    const fetchImages = async () => {
+    if (!page) {
+      return;
+    }
+
+    const getImages = async () => {
+      setShowLoader(true);
+
       try {
-        const request = await getImages(searchValue, currentPage);
-        setImages(prevArray => [...prevArray, ...request]);
+        const { images, newTotalImages } = await fetchImages(searchValue, page);
+        totalImages.current = newTotalImages;
+        setImages(prevImages => [...prevImages, ...images]);
       } catch (error) {
         alert(error.message);
       } finally {
@@ -29,15 +35,8 @@ const App = () => {
       }
     };
 
-    fetchImages();
-  }, [searchValue, currentPage]);
-
-  const getImages = async (words, page) => {
-    const request = await axios.get(
-      `https://pixabay.com/api/?q=${words}&page=${page}&key=${apiKey}&image_type=photo&orientation=horizontal&per_page=12`
-    );
-    return request.data.hits;
-  };
+    getImages();
+  }, [searchValue, page]);
 
   const toggleModal = () => {
     setShowModal(prevState => !prevState);
@@ -49,35 +48,40 @@ const App = () => {
   };
 
   const searchFormHandler = formValue => {
-    if (formValue.trim() === '' || formValue === searchValue) {
+    if (formValue === searchValue) {
       return;
     }
-    setShowLoader(true);
+
     setSearchValue(formValue);
     setImages([]);
-    setCurrentPage(1);
+    setPage(1);
   };
 
   const loadMoreHandler = () => {
-    setShowLoader(true);
-    setCurrentPage(prevState => prevState + 1);
+    setPage(prevState => prevState + 1);
+
+    setTimeout(() => {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth',
+      });
+    }, 500);
   };
 
   return (
     <div className="App">
+      <Searchbar onSubmit={searchFormHandler} />
+
+      <ImageGallery images={images} modalHandler={openLargeImage} />
+
+      {showLoader && <Loader />}
+      {totalImages.current > images.length && !showLoader && (
+        <Button loadMore={loadMoreHandler} />
+      )}
       {showModal && (
         <Modal closeModal={toggleModal}>
           <img src={modalImage} alt="modal" />
         </Modal>
-      )}
-      <Searchbar onSubmit={searchFormHandler} />
-
-      {searchValue !== '' && (
-        <ImageGallery imagesArray={images} modalHandler={openLargeImage} />
-      )}
-      {showLoader && <Loader />}
-      {searchValue !== '' && images.length > 0 && (
-        <Button loadMore={loadMoreHandler} />
       )}
     </div>
   );

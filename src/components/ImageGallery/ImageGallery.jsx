@@ -1,27 +1,30 @@
 import PropTypes from 'prop-types';
 
-import ImageGalleryItem from '../ImageGalleryItem/ImageGalleryItem';
+import ImageGalleryItem from 'components/ImageGalleryItem/ImageGalleryItem';
 
-const ImageGallery = ({ imagesArray, modalHandler }) => {
-  return (
-    <ul className="ImageGallery">
-      {imagesArray.map(image => {
-        return (
-          <ImageGalleryItem
-            key={image.id}
-            imageLink={image.webformatURL}
-            imageAlt={image.tags}
-            largeImageURL={image.largeImageURL}
-            modalHandler={modalHandler}
-          />
-        );
-      })}
-    </ul>
-  );
-};
+const ImageGallery = ({ images, modalHandler }) => (
+  <ul className="ImageGallery">
+    {images.map(({ id, webformatURL, largeImageURL }) => {
+      return (
+        <ImageGalleryItem
+          key={id}
+          webformatURL={webformatURL}
+          largeImageURL={largeImageURL}
+          modalHandler={modalHandler}
+        />
+      );
+    })}
+  </ul>
+);
 
 ImageGallery.propTypes = {
-  imagesArray: PropTypes.array.isRequired,
+  images: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.number.isRequired,
+      webformatURL: PropTypes.string.isRequired,
+      largeImageURL: PropTypes.string.isRequired,
+    })
+  ),
   modalHandler: PropTypes.func.isRequired,
 };
 
